@@ -6,18 +6,22 @@ namespace App\Controller;
 
 use App\Model\Role;
 use App\Model\User;
+use Hyperf\CircuitBreaker\Annotation\CircuitBreaker;
 use Hyperf\Contract\LengthAwarePaginatorInterface;
 use Hyperf\DbConnection\Db;
+use Hyperf\Di\Aop\ProceedingJoinPoint;
 use Hyperf\HttpServer\Annotation\Controller;
 use Hyperf\HttpServer\Annotation\GetMapping;
 use Hyperf\HttpServer\Annotation\PostMapping;
 use Hyperf\HttpServer\Annotation\PutMapping;
+use Hyperf\RateLimit\Annotation\RateLimit;
 use Nette\Utils\AssertionException;
 use Nette\Utils\Validators;
 use Psr\Http\Message\ResponseInterface;
 
 /**
  * @Controller(prefix="users")
+ * @RateLimit(limitCallback={UserController::class, "limitCallback"})
  * Class UserController
  *
  * @package App\Controller
@@ -27,6 +31,7 @@ class UserController extends BaseController
 
     /**
      * @GetMapping(path="")
+     * @RateLimit(create=100,capacity=1000)
      * @return LengthAwarePaginatorInterface
      */
     public function lists()
@@ -109,6 +114,7 @@ class UserController extends BaseController
 
     /**
      * @GetMapping(path="{id:\d+}")
+     * @CircuitBreaker(timeout=0.001, failCounter=1, successCounter=1, fallback="UserController::searchFallback")
      * @param $id
      *
      * @return ResponseInterface
@@ -166,5 +172,18 @@ class UserController extends BaseController
         });
 
         return $this->response->json(['id' => $user->id]);
+    }
+
+    public static function limitCallback(float $seconds, ProceedingJoinPoint $proceedingJoinPoint)
+    {
+        // $seconds 下次生成Token 的间隔, 单位为秒
+        // $proceedingJoinPoint 此次请求执行的切入点
+        // 可以通过调用 `$proceedingJoinPoint->process()` 继续执行或者自行处理
+        return $proceedingJoinPoint->process();
+    }
+
+    public function searchFallback($offset, $limit)
+    {
+        return [];
     }
 }

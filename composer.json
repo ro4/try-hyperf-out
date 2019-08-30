@@ -45,7 +45,11 @@
     "hyperf/amqp": "~1.0.0",
     "hyperf/model-cache": "~1.0.0",
     "hyperf/tracer": "~1.0.0",
-    "ext-json": "*"
+    "ext-json": "*",
+    "hyperf/rate-limit": "^1.0",
+    "hyperf/circuit-breaker": "^1.0",
+    "hyperf/crontab": "^1.0",
+    "hyperf/task": "^1.0"
   },
   "require-dev": {
     "swoft/swoole-ide-helper": "^4.2",

@@ -16,6 +16,7 @@ use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Database\Model\ModelNotFoundException;
 use Hyperf\ExceptionHandler\ExceptionHandler;
 use Hyperf\HttpMessage\Stream\SwooleStream;
+use Hyperf\RateLimit\Exception\RateLimitException;
 use Nette\Schema\ValidationException;
 use Nette\Utils\AssertionException;
 use Psr\Http\Message\ResponseInterface;
@@ -37,6 +38,11 @@ class AppExceptionHandler extends ExceptionHandler
     {
         if ($throwable instanceof ValidationException || $throwable instanceof AssertionException) {
             return $response->withStatus(400)
+                            ->withBody(new SwooleStream(json_encode(['message' => $throwable->getMessage()])));
+        }
+
+        if ($throwable instanceof RateLimitException) {
+            return $response->withStatus(503)
                             ->withBody(new SwooleStream(json_encode(['message' => $throwable->getMessage()])));
         }
 
